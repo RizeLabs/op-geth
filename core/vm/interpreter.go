@@ -22,6 +22,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/zama-ai/fhevm-go/fhevm"
 )
 
 // PrecompileOverrides is a function that can be used to override the default precompiled contracts
@@ -34,6 +35,8 @@ type Config struct {
 	EnablePreimageRecording     bool                // Enables recording of SHA3/keccak preimages
 	ExtraEips                   []int               // Additional EIPS that are to be enabled
 	OptimismPrecompileOverrides PrecompileOverrides // Precompile overrides for Optimism
+	IsEthCall                   bool
+	IsGasEstimation             bool
 }
 
 // ScopeContext contains the things that are per-call, such as stack and memory,
@@ -54,6 +57,18 @@ type EVMInterpreter struct {
 
 	readOnly   bool   // Whether to throw on stateful modifications
 	returnData []byte // Last CALL's return data for subsequent reuse
+}
+
+func (s *ScopeContext) GetMemory() fhevm.Memory {
+	return s.Memory
+}
+
+func (s *ScopeContext) GetStack() fhevm.Stack {
+	return s.Stack
+}
+
+func (s *ScopeContext) GetContract() fhevm.Contract {
+	return s.Contract
 }
 
 // NewEVMInterpreter returns a new instance of the Interpreter.
@@ -111,6 +126,12 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 // ErrExecutionReverted which means revert-and-keep-gas-left.
 func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
 	// Increment the call depth which is restricted to 1024
+
+	defer func() {
+		fhevm.RemoveVerifiedCipherextsAtCurrentDepth(in.evm.FhevmEnvironment())
+		in.evm.depth--
+	}()
+
 	in.evm.depth++
 	defer func() { in.evm.depth-- }()
 
@@ -152,7 +173,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		debug   = in.evm.Config.Tracer != nil
 	)
 	// Don't move this deferred function, it's placed before the capturestate-deferred method,
-	// so that it gets executed _after_: the capturestate needs the stacks before
+	// so that it get's executed _after_: the capturestate needs the stacks before
 	// they are returned to the pools
 	defer func() {
 		returnStack(stack)

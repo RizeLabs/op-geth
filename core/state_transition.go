@@ -28,6 +28,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/holiman/uint256"
+	"github.com/zama-ai/fhevm-go/fhevm"
 )
 
 // ExecutionResult includes all output after executing given evm
@@ -113,7 +114,7 @@ func IntrinsicGas(data []byte, accessList types.AccessList, isContractCreation b
 		gas += uint64(len(accessList)) * params.TxAccessListAddressGas
 		gas += uint64(accessList.StorageKeys()) * params.TxAccessListStorageKeyGas
 	}
-	return gas, nil
+	return fhevm.TxDataFractionalGas(gas), nil
 }
 
 // toWordSize returns the ceiled word size required for init code payment calculation.

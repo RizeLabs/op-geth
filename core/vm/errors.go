@@ -19,6 +19,8 @@ package vm
 import (
 	"errors"
 	"fmt"
+
+	"github.com/zama-ai/fhevm-go/fhevm"
 )
 
 // List evm execution errors
@@ -48,6 +50,13 @@ var (
 type ErrStackUnderflow struct {
 	stackLen int
 	required int
+}
+
+func init() {
+	fhevm.RegisterErrors(ErrOutOfGas, ErrCodeStoreOutOfGas, ErrDepth, ErrInsufficientBalance,
+		ErrContractAddressCollision, ErrExecutionReverted, ErrMaxInitCodeSizeExceeded, ErrMaxCodeSizeExceeded,
+		ErrInvalidJump, ErrWriteProtection, ErrReturnDataOutOfBounds, ErrGasUintOverflow, ErrInvalidCode,
+		ErrNonceUintOverflow, nil, nil, nil)
 }
 
 func (e *ErrStackUnderflow) Error() string {
