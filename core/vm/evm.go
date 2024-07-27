@@ -575,7 +575,8 @@ func (evm *FhevmImplementation) GetNonce(addr common.Address) uint64 {
 }
 
 func (evm *FhevmImplementation) AddBalance(addr common.Address, value *big.Int) {
-	evm.interpreter.evm.StateDB.AddBalance(addr, value)
+	newValue := uint256.NewInt(0).SetFromBig(value)
+	evm.interpreter.evm.StateDB.AddBalance(addr, newValue)
 }
 
 func (evm *FhevmImplementation) GetBalance(addr common.Address) *big.Int {
